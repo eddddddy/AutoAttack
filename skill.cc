@@ -31,7 +31,7 @@ Skill* Skill::deepCopy(std::unordered_map<Skill*, Skill*>& copied) {
         Skill* newSkill = copy();
         copied[this] = newSkill;
         for (Skill* ob : observers) {
-            addObserver(ob->deepCopy(copied));
+            newSkill->addObserver(ob->deepCopy(copied));
         }
         return newSkill;
     } else {

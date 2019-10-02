@@ -15,15 +15,18 @@ class State final {
         std::unique_ptr<Resources> resources;
 
     public:
+        // Steals ownership of the objects passed in
+        void setSkills(std::vector<std::unique_ptr<Skill>>&& skills);
+        void setResources(std::unique_ptr<Resources>&& resources);
 
         // deep copies the skills and resources
-        State copy(std::unordered_map<Skill*, Skill*>& copied) const;
+        State* copy(std::unordered_map<Skill*, Skill*>& copied) const;
 
         std::vector<Skill*> getAvailableSkills() const;
 
         // the skill must be nullptr, or otherwise must be ready and one
         //   of the pointers in the skills vector
-        void useSkill(Skill* skill);
+        void useSkill(Skill* skill, int time);
 
         int getWaitTime() const;
 };

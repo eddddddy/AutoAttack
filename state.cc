@@ -7,17 +7,25 @@
 #include "resources.h"
 #include "state.h"
 
-State State::copy(std::unordered_map<Skill*, Skill*>& copied) const {
-    State stateCopy{};
+void State::setSkills(std::vector<std::unique_ptr<Skill>>&& skills) {
+    this->skills = std::move(skills);
+}
 
-    stateCopy.resources = std::unique_ptr<Resources>{resources->copy()};
-    Resources* newResources = stateCopy.resources.get();
+void State::setResources(std::unique_ptr<Resources>&& resources) {
+    this->resources = std::move(resources);
+}
+
+State* State::copy(std::unordered_map<Skill*, Skill*>& copied) const {
+    State* stateCopy = new State;
+
+    stateCopy->resources = std::unique_ptr<Resources>{resources->copy()};
+    Resources* newResources = stateCopy->resources.get();
 
     for (auto it = skills.begin(); it != skills.end(); ++it) {
         Skill* skill = (*it).get();
         std::unique_ptr<Skill> newSkill{skill->deepCopy(copied)};
         newSkill->setResources(newResources);
-        stateCopy.skills.emplace_back(std::move(newSkill));
+        stateCopy->skills.emplace_back(std::move(newSkill));
     }
 
     return stateCopy;
@@ -31,19 +39,18 @@ std::vector<Skill*> State::getAvailableSkills() const {
     return availableSkills;
 }
 
-void State::useSkill(Skill* skill) {
-    int castTime = skill->getCastTime();
+void State::useSkill(Skill* skill, int time) {
     if (skill) {
         skill->use();
         for (auto it = skills.begin(); it != skills.end(); ++it) {
-            if ((*it).get() != skill) (*it)->wait(castTime);
+            if ((*it).get() != skill) (*it)->wait(time);
         }
     } else {
         for (auto it = skills.begin(); it != skills.end(); ++it) {
-            (*it)->wait(castTime);
+            (*it)->wait(time);
         }
     }
-    resources->wait(castTime);
+    resources->wait(time);
 }
 
 int State::getWaitTime() const {
@@ -52,5 +59,8 @@ int State::getWaitTime() const {
         Skill* skill = skills[i].get();
         if (!skill->isReady() && skill->timeUntilReady() < time) time = skill->timeUntilReady();
     }
+    Resources* r = resources.get();
+    if (r->timeUntilNextUpdate() < time) time = r->timeUntilNextUpdate();
+
     return time;
 }
