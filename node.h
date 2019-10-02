@@ -1,28 +1,33 @@
 #ifndef _NODE_H_
 #define _NODE_H_
 
+#include <string>
 #include <vector>
 #include <memory>
 
 #include "state.h"
-
-class Edge;
+#include "edge.h"
 
 class Node final {
 
     private:
-        State state;
+        std::unique_ptr<State> state;
 
-        Edge* parent;
+        Edge* parent = nullptr;
         std::vector<std::unique_ptr<Edge>> children;
 
-        int Nb;
+        int Nb = 0;
 
     public:
+        // steals ownership
+        void setState(std::unique_ptr<State>&& state);
+
         void initChildren();
 
         // Performs a single iteration of a Monte-Carlo playout
         void playout(double c);
+
+        std::string currentBestPath();
 };
 
 #endif

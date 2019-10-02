@@ -1,6 +1,7 @@
 #ifndef _SKILL_H_
 #define _SKILL_H_
 
+#include <string>
 #include <vector>
 #include <unordered_map>
 
@@ -40,6 +41,8 @@ class Skill {
         // only call if ready
         virtual int getDamage() const = 0;    // need not be deterministic (e.g. crits)
         virtual int getCastTime() const = 0;  // must be fully deterministic based on state
+
+        virtual std::string toString() const = 0;
 
         Skill* deepCopy(std::unordered_map<Skill*, Skill*>& copied);
 };

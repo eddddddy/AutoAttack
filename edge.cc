@@ -7,10 +7,10 @@
 #include "edge.h"
 
 Edge::Edge(Node* parent, double priorP, Skill* skill):
-    N{0}, W{0}, Q{0}, P{priorP}, parent{parent}, skill{skill}, time{skill->getCastTime()} {}
+    N{0}, W{0}, Q{0}, P{priorP}, parent{parent}, child{std::unique_ptr<Node>()}, skill{skill}, time{skill->getCastTime()} {}
 
 Edge::Edge(Node* parent, double priorP, int waitTime):
-    N{0}, W{0}, Q{0}, P{priorP}, parent{parent}, skill{nullptr}, time{waitTime} {}
+    N{0}, W{0}, Q{0}, P{priorP}, parent{parent}, child{std::unique_ptr<Node>()}, skill{nullptr}, time{waitTime} {}
 
 Node* Edge::getParent() const {return parent;}
 
@@ -22,7 +22,7 @@ void Edge::setChild(std::unique_ptr<Node>&& node) {
     child = std::move(node);
 }
 
-Node* Edge::getChild() const {return child.get();}
+Node* Edge::getChild() const {return child ? child.get() : nullptr;}
 
 int Edge::getN() const {return N;}
 
