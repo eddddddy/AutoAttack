@@ -21,10 +21,10 @@
 //     damage crit when conflagration is up, with 60% chance of critting.
 //     Has 6 sec cooldown measured from the end of its cast only if
 //     conflagration is down. Reduces the cooldown of Lunar Slash by
-//     2 secs on every cast.
+//     1 sec on every cast.
 //   - Flicker: has 250 millisecond cast time, does 40 damage non-crit
 //     and 60 damage crit, with 40% chance of critting. Has no cooldown.
-//     Reduces the cooldown of Dragon Tongue by 1 sec on every cast.
+//     Reduces the cooldown of Dragon Tongue by 2 secs on every cast.
 //   In addition, there is a resource called Focus, starting at 10
 //   units. One unit is regenerated every second when it is not at
 //   its maximum. Every cast of Lunar Slash triggers regeneration of
@@ -41,9 +41,22 @@ struct BMResources : public Resources {
 
     int focus = 10;
     bool conflagrationUp() const {return conflagration;}
-    int timeUntilNextUpdate() const override {return 1000 - focusRegenOffset;}
+
+    int timeUntilNextUpdate() const override {
+        // return the minimum of the conflagration time left, the
+        //   natural focus regen time left, and the lunar slash
+        //   focus regen time left
+        int conflagrationLeft = conflagrationTimeLeft > 0 ? conflagrationTimeLeft : 3600000;
+        int naturalRegenTimeLeft = focus == 10 ? 3600000 : 1000 - focusRegenOffset;
+        int lsRegenTimeLeft = timeSinceLastLS < 6000 ? 1000 - (timeSinceLastLS % 1000) : 3600000;
+        return conflagrationLeft < naturalRegenTimeLeft ?
+            (conflagrationLeft < lsRegenTimeLeft ? conflagrationLeft : lsRegenTimeLeft) :
+            (naturalRegenTimeLeft < lsRegenTimeLeft ? naturalRegenTimeLeft : lsRegenTimeLeft);
+    }
 
     void wait(int time) override {
+
+        // conflagration
         if (conflagration) {
             conflagrationTimeLeft -= time;
             if (conflagrationTimeLeft <= 0) {
@@ -51,12 +64,27 @@ struct BMResources : public Resources {
                 conflagration = false;
             }
         }
+
+        // natural regen of focus
         if (focus < 10) {
             focusRegenOffset += time;
             if (focusRegenOffset >= 1000) {
                 focus += 1;
                 focusRegenOffset -= 1000;
                 if (focus == 10) {
+                    focusRegenOffset = 0;
+                }
+            }
+        }
+
+        // focus regen from lunar slash
+        int prevTime = timeSinceLastLS;
+        timeSinceLastLS += time;
+        if (timeSinceLastLS <= 6000) {
+            if (prevTime < 0 || (prevTime / 1000 != timeSinceLastLS / 1000)) {
+                focus += 3;
+                if (focus >= 10) {
+                    focus = 10;
                     focusRegenOffset = 0;
                 }
             }
@@ -73,12 +101,7 @@ struct BMResources : public Resources {
         return newResources;
     }
 
-    void notify(LunarSlash* ls) {
-        conflagration = true;
-        conflagrationTimeLeft = 3000;
-        timeSinceLastLS = 0;
-    }
-
+    void notify(LunarSlash* ls);
     void notify(DragonTongue* dt) {focus -= (conflagration ? 1 : 2);}
     void notify(Flicker* fl) {focus -= 1;}
 
@@ -158,10 +181,16 @@ public:
     std::string toString() const override {return "FL";}
 };
 
-void LunarSlash::notify(Skill* from) {if (dynamic_cast<DragonTongue*>(from)) cd = cd < 2000 ? 0 : cd - 2000;}
+void BMResources::notify(LunarSlash* ls) {
+    conflagration = true;
+    conflagrationTimeLeft = 3000;
+    timeSinceLastLS = -1 * ls->getCastTime();
+}
+
+void LunarSlash::notify(Skill* from) {if (dynamic_cast<DragonTongue*>(from)) cd = cd < 1000 ? 0 : cd - 1000;}
 
 void DragonTongue::notify(Skill* from) {
-    if (dynamic_cast<Flicker*>(from)) cd = cd < 1000 ? 0 : cd - 1000;
+    if (dynamic_cast<Flicker*>(from)) cd = cd < 2000 ? 0 : cd - 2000;
     else if (dynamic_cast<LunarSlash*>(from)) cd = 0;
 }
 
@@ -197,6 +226,6 @@ int main(int argc, char* argv[]) {
 
     for (int i = 0; i < 1000000000; i++) {
         root.playout(cPUCT);
-        if (i % 100000 == 0) std::cout << root.currentBestPath() << std::endl;
+        if (i % 100000 == 0) std::cout << i << " " << root.currentBestPath() << std::endl;
     }
 }
