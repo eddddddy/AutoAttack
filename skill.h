@@ -13,6 +13,8 @@ class Skill {
         std::vector<Skill*> observers;
         void notifyObservers();
 
+    private: 
+
         virtual void notify(Skill* from) = 0;
 
         virtual void notifyResources() = 0;
@@ -42,6 +44,9 @@ class Skill {
         virtual int getDamage() const = 0;    // need not be deterministic (e.g. crits)
         virtual int getCastTime() const = 0;  // must be fully deterministic based on state
 
+        // Return a string representation of the current Skill
+        //   object. This representation will be used to print
+        //   the optimal rotations.
         virtual std::string toString() const = 0;
 
         Skill* deepCopy(std::unordered_map<Skill*, Skill*>& copied);

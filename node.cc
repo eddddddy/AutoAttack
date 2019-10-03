@@ -8,8 +8,37 @@
 #include "skill.h"
 #include "resources.h"
 #include "state.h"
-#include "edge.h"
 #include "node.h"
+
+Node::Edge::Edge(Node* parent, double priorP, Skill* skill):
+    N{0}, W{0}, Q{0}, P{priorP}, parent{parent}, child{std::unique_ptr<Node>()}, skill{skill}, time{skill->getCastTime()} {}
+
+Node::Edge::Edge(Node* parent, double priorP, int waitTime):
+    N{0}, W{0}, Q{0}, P{priorP}, parent{parent}, child{std::unique_ptr<Node>()}, skill{nullptr}, time{waitTime} {}
+
+Node* Node::Edge::getParent() const {return parent;}
+
+Skill* Node::Edge::getSkill() const {return skill;}
+
+int Node::Edge::getTime() const {return time;}
+
+void Node::Edge::setChild(std::unique_ptr<Node>&& node) {
+    child = std::move(node);
+}
+
+Node* Node::Edge::getChild() const {return child ? child.get() : nullptr;}
+
+int Node::Edge::getN() const {return N;}
+
+double Node::Edge::getQ() const {return Q;}
+
+double Node::Edge::getP() const {return P;}
+
+void Node::Edge::addValue(double value) {
+    N++;
+    W += value;
+    Q = W / N;
+}
 
 void Node::setState(std::unique_ptr<State>&& state) {
     this->state = std::move(state);
