@@ -15,11 +15,33 @@ class State final {
         std::unique_ptr<Resources> resources;
 
     public:
-        // Steals ownership of the objects passed in
+
+        // Set all the skills, stealing ownership of the vector and
+        //   every pointer it stores. The skills in the vector must
+        //   already have all of their observers set (if there are
+        //   any) and their resources set to the same object. This
+        //   method and the next must be called before any other
+        //   method is called, otherwise behaviour is undefined.
+        //   This method must be called only once, otherwise
+        //   behaviour is also undefined.
         void setSkills(std::vector<std::unique_ptr<Skill>>&& skills);
+
+        // Set the resources of the skills, stealing ownership of
+        //   the pointer passed in. The resources passed in must
+        //   be the resources of every skill in the skills vector.
+        //   This method and the previoius must be called before
+        //   any other method is called, otherwise behaviour is
+        //   undefined. This method must be called only once,
+        //   otherwise behaviour is also undefined.
         void setResources(std::unique_ptr<Resources>&& resources);
 
-        // deep copies the skills and resources
+        // Return a pointer to a deep copy of the current Skill
+        //   object. The copy will have all of its skills and
+        //   resources in a different memory location, with their
+        //   observers set to the new locations. The map passed
+        //   in will be modified so that it maps the memory
+        //   location of every old skill pointer to the new
+        //   memory location of the corresponding pointer.
         State* copy(std::unordered_map<Skill*, Skill*>& copied) const;
 
         std::vector<Skill*> getAvailableSkills() const;

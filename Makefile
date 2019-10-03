@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Werror -Ofast -MMD
 EXEC = auto
-OBJECTS = main.o skill.o state.o node.o edge.o
+OBJECTS = main.o skill.o state.o node.o
 DEPENDS = ${OBJECTS:.o=.d}
 
 ${EXEC}: ${OBJECTS}
