@@ -1,4 +1,3 @@
-#include <iostream>
 #include <string>
 #include <vector>
 #include <random>
@@ -8,6 +7,7 @@
 #include "skill.h"
 #include "resources.h"
 #include "node.h"
+#include "explore.h"
 
 // Example (a simplified BM rotation): 3 skills called Lunar Slash, 
 //   Dragon Tongue, and Flicker, with their effects as follows:
@@ -130,7 +130,7 @@ public:
     void wait(int time) override {cd = cd < time ? 0 : cd - time;}
     int getDamage() const override {return (dist(mt) >= 4) ? 180 : 100;}
     int getCastTime() const override {return 400;}
-    std::string toString() const override {return "LS";}
+    std::string toString() const override {return "L";}
 };
 
 class DragonTongue : public Skill {
@@ -160,7 +160,7 @@ public:
         else return (dist(mt) >= 4) ? 200 : 120;
     }
     int getCastTime() const override {return 400;}
-    std::string toString() const override {return "DT";}
+    std::string toString() const override {return "D";}
 };
 
 class Flicker : public Skill {
@@ -178,7 +178,7 @@ public:
     void wait(int time) override {}
     int getDamage() const override {return (dist(mt) >= 4) ? 60 : 40;}
     int getCastTime() const override {return 250;}
-    std::string toString() const override {return "FL";}
+    std::string toString() const override {return "F";}
 };
 
 void BMResources::notify(LunarSlash* ls) {
@@ -207,6 +207,9 @@ int main(int argc, char* argv[]) {
     double cPUCT = 1;
     if (argc > 1) cPUCT = std::stod(std::string(argv[1]));
 
+    long numPlayouts = 10000000;
+    if (argc > 2) numPlayouts = std::stol(std::string(argv[2]));
+
     std::vector<std::unique_ptr<Skill>> skills;
     std::unique_ptr<Resources> resources = std::make_unique<BMResources>();
     skills.emplace_back(std::make_unique<LunarSlash>());
@@ -218,14 +221,11 @@ int main(int argc, char* argv[]) {
     skills[0]->setResources(resources.get());
     skills[1]->setResources(resources.get());
     skills[2]->setResources(resources.get());
-    auto state = std::make_unique<State>();
+    std::unique_ptr<State> state = std::make_unique<State>();
     state->setSkills(std::move(skills));
     state->setResources(std::move(resources));
     Node root;
     root.setState(std::move(state));
 
-    for (int i = 0; i < 1000000000; i++) {
-        root.playout(cPUCT);
-        if (i % 100000 == 0) std::cout << i << " " << root.currentBestPath() << std::endl;
-    }
+    Explore::explore(&root, cPUCT, numPlayouts);
 }

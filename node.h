@@ -2,58 +2,21 @@
 #define _NODE_H_
 
 #include <string>
-#include <vector>
 #include <memory>
 
 #include "state.h"
 
+struct NodeImpl;
+
 class Node final {
 
     private:
-        class Edge final {
-
-            private:
-                int N;
-                double W, Q;
-                const double P;
-        
-                Node* parent;
-                std::unique_ptr<Node> child;
-        
-                Skill* skill;
-                int time;
-        
-            public:
-                Edge(Node* parent, double priorP, Skill* skill);
-                Edge(Node* parent, double priorP, int waitTime);
-        
-                Node* getParent() const;
-        
-                Skill* getSkill() const;
-        
-                int getTime() const;
-        
-                void setChild(std::unique_ptr<Node>&& node);
-                Node* getChild() const;
-        
-                int getN() const;
-                double getQ() const;
-                double getP() const;
-        
-                void addValue(double value);
-        };
-
-        std::unique_ptr<State> state;
-
-        Edge* parent = nullptr;
-        std::vector<std::unique_ptr<Edge>> children;
-
-        int Nb = 0;
-
-        void initChildren();
+        std::unique_ptr<NodeImpl> imp;
 
     public:
-
+        Node();
+        ~Node();
+ 
         // Set the current state, stealing ownership of the pointer
         //   passed in. This method must be called before any other
         //   method is called, otherwise behaviour is undefined. This
