@@ -26,6 +26,9 @@ struct NodeImpl {
             Skill* skill;
             int time;
 
+            long totalSkillDamage;
+            int numDamageCalls;
+
         public:
             Edge(Node* parent, double priorP, Skill* skill);
             Edge(Node* parent, double priorP, int waitTime);
@@ -33,7 +36,6 @@ struct NodeImpl {
             Node* getParent() const;
 
             Skill* getSkill() const;
-
             int getTime() const;
 
             void setChild(std::unique_ptr<Node>&& node);
@@ -42,6 +44,9 @@ struct NodeImpl {
             int getN() const;
             double getQ() const;
             double getP() const;
+
+            int getSkillDamage();
+            double getAverageSkillDamage() const;
 
             void addValue(double value);
     };
@@ -57,10 +62,12 @@ struct NodeImpl {
 };
 
 NodeImpl::Edge::Edge(Node* parent, double priorP, Skill* skill):
-    N{0}, W{0}, Q{0}, P{priorP}, parent{parent}, child{std::unique_ptr<Node>()}, skill{skill}, time{skill->getCastTime()} {}
+    N{0}, W{0}, Q{0}, P{priorP}, parent{parent}, child{std::unique_ptr<Node>()},
+    skill{skill}, time{skill->getCastTime()}, totalSkillDamage{0}, numDamageCalls{0} {}
 
 NodeImpl::Edge::Edge(Node* parent, double priorP, int waitTime):
-    N{0}, W{0}, Q{0}, P{priorP}, parent{parent}, child{std::unique_ptr<Node>()}, skill{nullptr}, time{waitTime} {}
+    N{0}, W{0}, Q{0}, P{priorP}, parent{parent}, child{std::unique_ptr<Node>()},
+    skill{nullptr}, time{waitTime}, totalSkillDamage{0}, numDamageCalls{0} {}
 
 Node* NodeImpl::Edge::getParent() const {return parent;}
 
@@ -79,6 +86,17 @@ int NodeImpl::Edge::getN() const {return N;}
 double NodeImpl::Edge::getQ() const {return Q;}
 
 double NodeImpl::Edge::getP() const {return P;}
+
+int NodeImpl::Edge::getSkillDamage() {
+    int damage = skill ? skill->getDamage() : 0;
+    totalSkillDamage += damage;
+    numDamageCalls++;
+    return damage;
+}
+
+double NodeImpl::Edge::getAverageSkillDamage() const {
+    return numDamageCalls > 0 ? static_cast<double>(totalSkillDamage) / numDamageCalls : 0;
+}
 
 void NodeImpl::Edge::addValue(double value) {
     N++;
@@ -138,7 +156,7 @@ void Node::playout(double c) {
     NodeImpl::Edge* currEdge = edgeToTake;
     int accumDamage = 0, accumTime = 0;
     do {
-        accumDamage += (currEdge->getSkill() ? currEdge->getSkill()->getDamage() : 0);
+        accumDamage += currEdge->getSkillDamage();
         accumTime += currEdge->getTime();
         double dps = static_cast<double>(accumDamage) / accumTime;
         currEdge->addValue(dps);
@@ -147,13 +165,16 @@ void Node::playout(double c) {
     } while (currEdge);
 }
 
-std::string Node::currentBestPath() {
+std::pair<std::string, double> Node::currentBestPath() {
     if (imp->children.empty()) imp->initChildren();
 
     std::string path = "";
+    int damage = 0;
+    int time = 0;
     Node* currNode = this;
     NodeImpl::Edge* edgeToTake = nullptr;
     double maxEdgeVisits = -1;
+
     do {
         maxEdgeVisits = -1;
         for (auto it = currNode->imp->children.begin(); it != currNode->imp->children.end(); ++it) {
@@ -163,9 +184,15 @@ std::string Node::currentBestPath() {
                 maxEdgeVisits = thisEdge->getN();
             }
         }
-        if (edgeToTake->getSkill()) path += edgeToTake->getSkill()->toString() + " ";
+        if (edgeToTake->getSkill()) {
+            path += edgeToTake->getSkill()->toString() + " ";
+            damage += edgeToTake->getAverageSkillDamage();
+        }
+        time += edgeToTake->getTime();
         currNode = edgeToTake->getChild();
     } while (currNode);
 
-    return path;
+    double dps = time > 0 ? static_cast<double>(damage) / time : 0;
+
+    return std::pair<std::string, double>{path, dps};
 }

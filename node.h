@@ -31,13 +31,13 @@ class Node final {
         void playout(double c);
 
         // Get a string representing the current optimal path from
-        //   the root to any leaf. The path is determined by starting
-        //   at the root, and at each node taking the edge with the
-        //   highest visit count (from all the playouts) until a leaf
-        //   node is reached. The string is constructed by concatenating
-        //   the string representations of the skills in the edges of
-        //   this path.
-        std::string currentBestPath();
+        //   the root to any leaf and the total dps of this path. The
+        //   path is determined by starting at the root, and at each
+        //   node taking the edge with the highest visit count (from all
+        //   the playouts) until a leaf node is reached. The string is
+        //   constructed by concatenating the string representations of
+        //   the skills in the edges of this path.
+        std::pair<std::string, double> currentBestPath();
 };
 
 #endif
